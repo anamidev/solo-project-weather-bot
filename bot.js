@@ -54,20 +54,22 @@ bot.command('schedule', async (ctx) => {
     job = schedule.scheduleJob('*/5 * * * * *', async () => {
       bot.telegram.sendMessage(ctx.chat.id, await getWeatherForToday());
     });
+    ctx.reply('Расписание установлено');
   } else {
     try {
       const message = await getWeatherForToday(param);
       if (message !== `Неверный запрос. Попробуйте еще раз! 
 (Попробуйте ввести название города по-английски)`) {
         job = schedule.scheduleJob('*/5 * * * * *', async () => {
-          bot.telegram.sendMessage(ctx.chat.id, message);
+          ctx.reply(message);
         });
+        ctx.reply('Расписание установлено');
       } else {
-        bot.telegram.sendMessage(ctx.chat.id, `Неверный запрос. Попробуйте еще раз! 
+        ctx.reply(`Неверный запрос. Попробуйте еще раз! 
 (Попробуйте ввести название города по-английски)`);
       }
     } catch {
-      bot.telegram.sendMessage(ctx.chat.id, `Не удалось обработать запрос! Пожалуйста, попробуйте позже!`);
+      ctx.reply(`Не удалось обработать запрос! Пожалуйста, попробуйте позже!`);
     }
   }
 });
@@ -75,7 +77,10 @@ bot.command('schedule', async (ctx) => {
 // command /stopschedule - stops current schedule
 bot.command('stopschedule', (ctx) => {
     if (job) {
-        job.cancel()
+        job.cancel();
+        ctx.reply('Расписание удалено');
+    } else {
+      ctx.reply('Нет расписания для удаления');
     }
 });
 
