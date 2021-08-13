@@ -1,103 +1,70 @@
 require('dotenv').config();
-const fetch = require('node-fetch');
 const { Telegraf } = require('telegraf');
+const schedule = require('node-schedule');
+const { getWeatherForNow, getWeatherForToday} = require('./functions');
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
-// ответ бота на команду /start
+// start command
 bot.start((ctx) => {
-  return ctx.reply('Добро пожаловать в Weather-Today! (Москва)'); 
+  return ctx.reply(`Добро пожаловать в Weather-Today! 
+Город по умолчанию - Москва 
+/help для справки`); 
 });
 
-// ответ бота на команду /help
+// help with all commands
 bot.help((ctx) => {
-  return ctx.reply(`"Погода" - для получения информации о погоде на текущий день.
-"Сейчас" - для получения прогноза на текущий момент`);
+  return ctx.reply(`/start - О боте
+/today (city) - для получения информации о погоде на текущий день (параметр city опционален, название города вводится по-английски)
+/now (city) - для получения прогноза на текущий момент (параметр city опционален, название города вводится по-английски)
+/schedule - для получения прогноза по расписанию
+/stopschedule - остановить уведомления по расписанию`);
 }); 
 
-bot.hears('Погода', async (ctx) => { 
-  const response = await fetch("https://weatherapi-com.p.rapidapi.com/forecast.json?q=%D0%9C%D0%BE%D1%81%D0%BA%D0%B2%D0%B0&days=1&lang=ru", {
-    "method": "GET",
-    "headers": {
-      "x-rapidapi-key": process.env.X_RAPIDAPI_KEY,
-      "x-rapidapi-host": process.env.X_RAPIDAPI_HOST
-    }
-  });
-
-  const data = await response.json();
-
-  const { name } = data.location; // location name
-  const [ currentDay ] = data.forecast.forecastday; // object with forecast on current day
-  const { date }  = currentDay; // current date
-  const [ year, month, day ] = date.split('-');
-  const { 
-    avghumidity,
-    avgtemp_c, 
-    daily_chance_of_rain, 
-    daily_chance_of_snow, 
-    maxtemp_c, 
-    maxwind_kph, 
-    mintemp_c,
-    condition: { text },
-  } = currentDay.day;
-  const [,,,,,day5,,,,,,day11,,,,,,day17,,,,,,day23] = currentDay.hour;
-
-  let firstMessage = `Погода на ${day}-${month}-${year}, ${name}:
-
-Весь день - ${text}
-
-Средняя температура - ${avgtemp_c}°C (от ${mintemp_c} до ${maxtemp_c}°C) 
-Влажность - ${avghumidity}%
-Вероятность дождя - ${daily_chance_of_rain}%, снега - ${daily_chance_of_snow}%
-Макс. скорость ветра - ${maxwind_kph} км/ч`;
-  
-  await ctx.reply(firstMessage);
-
-  let secondMessage = ``;
-
-  for (let object of [day5,day11,day17,day23]) {
-    const temp = `${object.time.slice((object.time.indexOf(' ')) + 1)} - ${object.condition.text}
-
-Температура - ${object.temp_c}°C
-Влажность - ${object.humidity}%
-Вероятность дождя - ${object.chance_of_rain}%, снега - ${object.chance_of_snow}%
-Скорость ветра - ${object.wind_kph} км/ч
-
-`;
-
-    secondMessage += temp;
+// command /today, can accept city as param via space
+// only eng city names currently
+bot.command('today', async (ctx) => {
+  const [, param] = ctx.message.text.split(' ');
+  if (!param) {
+    ctx.reply(await getWeatherForToday());
+  } else {
+    ctx.reply(await getWeatherForToday(param));
   }
-
-  ctx.reply(secondMessage);
 });
 
-bot.hears('Сейчас', async (ctx) => {
-  const response = await fetch("https://weatherapi-com.p.rapidapi.com/forecast.json?q=%D0%9C%D0%BE%D1%81%D0%BA%D0%B2%D0%B0&days=1&lang=ru", {
-    "method": "GET",
-    "headers": {
-      "x-rapidapi-key": process.env.X_RAPIDAPI_KEY,
-      "x-rapidapi-host": process.env.X_RAPIDAPI_HOST
-    }
+// command /now, can accept city as param via space
+// only eng city names currently
+bot.command('now', async (ctx) => {
+  const [, param] = ctx.message.text.split(' ');
+  if (!param) {
+    ctx.reply(await getWeatherForNow());
+  } else {
+    ctx.reply(await getWeatherForNow(param));
+  }
+});
+
+// weather schedule
+// '30 7 * * *' - cron param for setting schedule at 7:30 every day
+
+let job; 
+
+// command /schedule - starts schedule
+bot.command('schedule', (ctx) => {
+  job = schedule.scheduleJob('*/1 * * * *', async () => {
+    bot.telegram.sendMessage(ctx.chat.id, await getWeatherForToday());
   });
-
-  const data = await response.json();
-  const { current } = data;
-  const {
-    condition: { text },
-    temp_c,
-    humidity,
-    wind_kph,
-  } = current;
-  
-  await ctx.reply(`Погода сейчас - ${text}
-Температура - ${temp_c}°C
-Влажность - ${humidity}%
-Скорость ветра - ${wind_kph} км/ч`);
 });
 
-// bot.on это обработчик введенного юзером сообщения,
-// можно использовать обработчик текста, голосового сообщения, стикера
-bot.on('message', (ctx) => ctx.reply('Введите команду. Список команд /help')) 
+// command /stopschedule - stops current schedule
+bot.command('stopschedule', (ctx) => {
+    if (job) {
+        job.cancel()
+    }
+});
 
-// запуск бота
-bot.launch() 
+// bots replies with this message if it hadn't been triggered with any of the previous handlers
+bot.on('message', (ctx) => ctx.reply('Введите команду. Список команд /help'));
+
+// bot launch
+bot.launch();
+console.log('Bot is up!');
