@@ -47,12 +47,29 @@ bot.command('now', async (ctx) => {
 // '30 7 * * *' - cron param for setting schedule at 7:30 every day
 
 let job; 
-
 // command /schedule - starts schedule
-bot.command('schedule', (ctx) => {
-  job = schedule.scheduleJob('*/1 * * * *', async () => {
-    bot.telegram.sendMessage(ctx.chat.id, await getWeatherForToday());
-  });
+bot.command('schedule', async (ctx) => {
+  const [, param] = ctx.message.text.split(' ');
+  if (!param) {
+    job = schedule.scheduleJob('*/5 * * * * *', async () => {
+      bot.telegram.sendMessage(ctx.chat.id, await getWeatherForToday());
+    });
+  } else {
+    try {
+      const message = await getWeatherForToday(param);
+      if (message !== `Неверный запрос. Попробуйте еще раз! 
+(Попробуйте ввести название города по-английски)`) {
+        job = schedule.scheduleJob('*/5 * * * * *', async () => {
+          bot.telegram.sendMessage(ctx.chat.id, message);
+        });
+      } else {
+        bot.telegram.sendMessage(ctx.chat.id, `Неверный запрос. Попробуйте еще раз! 
+(Попробуйте ввести название города по-английски)`);
+      }
+    } catch {
+      bot.telegram.sendMessage(ctx.chat.id, `Не удалось обработать запрос! Пожалуйста, попробуйте позже!`);
+    }
+  }
 });
 
 // command /stopschedule - stops current schedule
