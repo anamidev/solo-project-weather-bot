@@ -3,12 +3,12 @@ const { Telegraf } = require('telegraf');
 const schedule = require('node-schedule');
 const { getWeatherForNow, getWeatherForToday} = require('./functions');
 
-const bot = new Telegraf(process.env.BOT_TOKEN);
+const bot = new Telegraf(process.env.BOT_TOKEN); // bot name - @elbrus_weather_today_bot
 
 // start command
 bot.start((ctx) => {
   return ctx.reply(`Добро пожаловать в Weather-Today! 
-Город по умолчанию - Moscow
+Город по умолчанию - Москва
 Расписание по умолчанию - каждые 10 секунд
 /help для справки`); 
 });
@@ -16,9 +16,9 @@ bot.start((ctx) => {
 // help with all commands
 bot.help((ctx) => {
   return ctx.reply(`/start - О боте
-/today (city) - для получения информации о погоде на текущий день (параметр city опционален: название города вводится по-английски)
-/now (city) - для получения прогноза на текущий момент (параметр city опционале:, название города вводится по-английски)
-/schedule (city) (hours:minutes)- для получения прогноза по расписанию (параметры city и hours:minutes опциональны: название города вводится по-английски, время вводится в формате 00:00, расписание присылается каждый день в указанное время)
+/today city - для получения информации о погоде на текущий день (параметр city опционален)
+/now city - для получения прогноза на текущий момент (параметр city опционален)
+/schedule city hours:minutes- для получения прогноза по расписанию (параметры city и hours:minutes опциональны: время вводится в формате 00:00, расписание присылается каждый день в указанное время)
 /stopschedule - остановить уведомления по расписанию`);
 }); 
 
@@ -59,8 +59,6 @@ bot.command('schedule', async (ctx) => {
     } else {
       return ctx.reply(`Некорректное время! Попробуйте еще раз!`);
     }
-  } else {
-    return ctx.reply(`Некорректное время! Попробуйте еще раз!`);
   }
 
   if (!param) {
@@ -71,15 +69,13 @@ bot.command('schedule', async (ctx) => {
   } else {
     try {
       const message = await getWeatherForToday(param);
-      if (message !== `Неверный запрос. Попробуйте еще раз! 
-(Попробуйте ввести название города по-английски)`) {
+      if (message !== `Неверный запрос. Попробуйте еще раз!`) {
         job = schedule.scheduleJob(defaultSchedule, async () => {
           ctx.reply(message);
         });
         ctx.reply('Расписание установлено');
       } else {
-        ctx.reply(`Неверный запрос. Попробуйте еще раз! 
-(Попробуйте ввести название города по-английски)`);
+        ctx.reply(`Неверный запрос. Попробуйте еще раз!`);
       }
     } catch {
       ctx.reply(`Не удалось обработать запрос! Пожалуйста, попробуйте позже!`);
