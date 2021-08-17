@@ -1,8 +1,9 @@
 const fetch = require('node-fetch');
 
-const getWeatherForNow = async (city = 'Moscow') => {
+const getWeatherForNow = async (city = 'Москва') => {
   try {
-    const response = await fetch(`https://weatherapi-com.p.rapidapi.com/forecast.json?q=${city}&days=1&lang=ru`, {
+    const encoded = encodeURIComponent(city);
+    const response = await fetch(`https://weatherapi-com.p.rapidapi.com/forecast.json?q=${encoded}&days=1&lang=ru`, {
     "method": "GET",
     "headers": {
       "x-rapidapi-key": process.env.X_RAPIDAPI_KEY,
@@ -26,17 +27,17 @@ const getWeatherForNow = async (city = 'Moscow') => {
 Влажность - ${humidity}%
 Скорость ветра - ${(wind_kph / 3.6).toFixed(2)} м/с`;
   } catch {
-    return `Неверный запрос. Попробуйте еще раз! 
-(Попробуйте ввести название города по-английски)`;
+    return `Неверный запрос. Попробуйте еще раз!`;
   }
 
 }
 
 // ----------------
 
-const getWeatherForToday = async (city = 'Moscow') => {
+const getWeatherForToday = async (city = 'Москва') => {
   try {
-    const response = await fetch(`https://weatherapi-com.p.rapidapi.com/forecast.json?q=${city}&days=1&lang=ru`, {
+    const encoded = encodeURIComponent(city);
+    const response = await fetch(`https://weatherapi-com.p.rapidapi.com/forecast.json?q=${encoded}&days=1&lang=ru`, {
     "method": "GET",
     "headers": {
       "x-rapidapi-key": process.env.X_RAPIDAPI_KEY,
@@ -90,8 +91,7 @@ const getWeatherForToday = async (city = 'Moscow') => {
 ${secondMessage}`;
  
   } catch {
-    return `Неверный запрос. Попробуйте еще раз! 
-(Попробуйте ввести название города по-английски)`;
+    return `Неверный запрос. Попробуйте еще раз!`;
   }
 
 };

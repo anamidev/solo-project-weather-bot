@@ -3,21 +3,22 @@ const { Telegraf } = require('telegraf');
 const schedule = require('node-schedule');
 const { getWeatherForNow, getWeatherForToday} = require('./functions');
 
-const bot = new Telegraf(process.env.BOT_TOKEN);
+const bot = new Telegraf(process.env.BOT_TOKEN); // bot name - @elbrus_weather_today_bot
 
 // start command
 bot.start((ctx) => {
   return ctx.reply(`Добро пожаловать в Weather-Today! 
-Город по умолчанию - Москва 
+Город по умолчанию - Москва
+Расписание по умолчанию - каждые 10 секунд
 /help для справки`); 
 });
 
 // help with all commands
 bot.help((ctx) => {
   return ctx.reply(`/start - О боте
-/today (city) - для получения информации о погоде на текущий день (параметр city опционален, название города вводится по-английски)
-/now (city) - для получения прогноза на текущий момент (параметр city опционален, название города вводится по-английски)
-/schedule - для получения прогноза по расписанию
+/today city - для получения информации о погоде на текущий день (параметр city опционален)
+/now city - для получения прогноза на текущий момент (параметр city опционален)
+/schedule city hours:minutes- для получения прогноза по расписанию (параметры city и hours:minutes опциональны: время вводится в формате 00:00, расписание присылается каждый день в указанное время)
 /stopschedule - остановить уведомления по расписанию`);
 }); 
 
@@ -43,30 +44,38 @@ bot.command('now', async (ctx) => {
   }
 });
 
-// weather schedule
-// '30 7 * * *' - cron param for setting schedule at 7:30 every day
-
-let job; 
 // command /schedule - starts schedule
+let job; 
 bot.command('schedule', async (ctx) => {
-  const [, param] = ctx.message.text.split(' ');
+  const [, param, time] = ctx.message.text.split(' ');
+  
+  let defaultSchedule = '*/10 * * * * *';
+  const timeRegex = /^\d{2}:\d{2}$/;
+  if (time && timeRegex.test(time)) {
+    const [ hour, minute ] = time.split(':');
+    if (Number(hour) > -1 && Number(hour) < 24 && Number(minute) > -1 && Number(minute) < 60) {
+      defaultSchedule = `${minute} ${hour} * * *`;
+      ctx.reply(`Вы установили время на ${time}`);
+    } else {
+      return ctx.reply(`Некорректное время! Попробуйте еще раз!`);
+    }
+  }
+
   if (!param) {
-    job = schedule.scheduleJob('*/5 * * * * *', async () => {
+    job = schedule.scheduleJob(defaultSchedule, async () => {
       bot.telegram.sendMessage(ctx.chat.id, await getWeatherForToday());
     });
     ctx.reply('Расписание установлено');
   } else {
     try {
       const message = await getWeatherForToday(param);
-      if (message !== `Неверный запрос. Попробуйте еще раз! 
-(Попробуйте ввести название города по-английски)`) {
-        job = schedule.scheduleJob('*/5 * * * * *', async () => {
+      if (message !== `Неверный запрос. Попробуйте еще раз!`) {
+        job = schedule.scheduleJob(defaultSchedule, async () => {
           ctx.reply(message);
         });
         ctx.reply('Расписание установлено');
       } else {
-        ctx.reply(`Неверный запрос. Попробуйте еще раз! 
-(Попробуйте ввести название города по-английски)`);
+        ctx.reply(`Неверный запрос. Попробуйте еще раз!`);
       }
     } catch {
       ctx.reply(`Не удалось обработать запрос! Пожалуйста, попробуйте позже!`);
