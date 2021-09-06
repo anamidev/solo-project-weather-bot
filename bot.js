@@ -9,7 +9,7 @@ const bot = new Telegraf(process.env.BOT_TOKEN); // bot name - @elbrus_weather_t
 bot.start((ctx) => {
   return ctx.reply(`Добро пожаловать в Weather-Today! 
 Город по умолчанию - Москва
-Расписание по умолчанию - каждые 10 секунд
+Расписание по умолчанию - каждый час
 /help для справки`); 
 });
 
@@ -49,7 +49,7 @@ let job;
 bot.command('schedule', async (ctx) => {
   const [, param, time] = ctx.message.text.split(' ');
   
-  let defaultSchedule = '*/10 * * * * *';
+  let defaultSchedule = '* * */1 * * *';
   const timeRegex = /^\d{2}:\d{2}$/;
   if (time && timeRegex.test(time)) {
     const [ hour, minute ] = time.split(':');
