@@ -3,3 +3,6 @@ Solo project, the telegram bot that that is available by username @elbrus_weathe
 
 # What does it do?
 It sends you the forecast for current day on demand or on schedule at certain time.
+
+# Commands
+/start - gives the needed info to start working with bot
