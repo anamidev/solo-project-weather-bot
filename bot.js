@@ -49,7 +49,7 @@ let job;
 bot.command('schedule', async (ctx) => {
   const [, param, time] = ctx.message.text.split(' ');
   
-  let defaultSchedule = '* * */1 * * *';
+  let defaultSchedule = '* */1 * * *';
   const timeRegex = /^\d{2}:\d{2}$/;
   if (time && timeRegex.test(time)) {
     const [ hour, minute ] = time.split(':');
