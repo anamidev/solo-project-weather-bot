@@ -23,7 +23,6 @@ bot.help((ctx) => {
 }); 
 
 // command /today, can accept city as param via space
-// only eng city names currently
 bot.command('today', async (ctx) => {
   const [, param] = ctx.message.text.split(' ');
   if (!param) {
@@ -34,7 +33,6 @@ bot.command('today', async (ctx) => {
 });
 
 // command /now, can accept city as param via space
-// only eng city names currently
 bot.command('now', async (ctx) => {
   const [, param] = ctx.message.text.split(' ');
   if (!param) {
@@ -49,7 +47,7 @@ let job;
 bot.command('schedule', async (ctx) => {
   const [, param, time] = ctx.message.text.split(' ');
   
-  let defaultSchedule = '* * */1 * * *';
+  let defaultSchedule = '* */1 * * *';
   const timeRegex = /^\d{2}:\d{2}$/;
   if (time && timeRegex.test(time)) {
     const [ hour, minute ] = time.split(':');
